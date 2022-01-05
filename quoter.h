@@ -27,6 +27,8 @@ namespace QuoteManager {
         uint32_t available_volume() const { return available_volume_; }
         tm *expiration_date() const { return expiration_date_; }
 
+        void setNewVolume(uint32_t newVolume) {available_volume_ = newVolume;}
+
         Quote(const std::string& id, const std::string& symbol, double price, uint32_t available_volume,
                 tm *expiration_date) {
             this->id_ = id;
@@ -100,7 +102,7 @@ namespace QuoteManager {
         // volume, return null. Otherwise return a Quote object with all the fields
         // set. Don't return any quote which is past its expiration time, or has been
         // removed.
-        virtual Quote GetBestQuoteWithAvailableVolume(const std::string& symbol) = 0;
+        virtual Quote GetBestQuoteWithAvailableVolume(const std::string&) = 0;
 
         // Request that a trade be executed. For the purposes of this interface,
         // assume that the trade is a request to BUY, not sell. Do not trade on
@@ -119,7 +121,7 @@ namespace QuoteManager {
         // And After calling this a second time for 500 volume, the quotes are:
         //   {Price: 1.0, Volume: 1,000, AvailableVolume: 0}
         //   {Price: 2.0, Volume: 1,000, AvailableVolume: 750}
-        virtual TradeResult ExecuteTrade(const std::string& symbol, uint32_t volume_requested) = 0;
+        virtual TradeResult ExecuteTrade(const std::string&, uint32_t) = 0;
     }; // IQuoteManager
 
     class SimpleQuoteManager : public IQuoteManager {
@@ -129,15 +131,16 @@ namespace QuoteManager {
     public: 
         void AddOrUpdateQuote(Quote&);
         void RemoveQuote(const std::string&);
-        void RemoveAllQuotes(const std::string& symbol);
-        Quote GetBestQuoteWithAvailableVolume(const std::string& symbol);
-        TradeResult ExecuteTrade(const std::string& symbol, uint32_t volume_requested);
+        void RemoveAllQuotes(const std::string&);
+        Quote GetBestQuoteWithAvailableVolume(const std::string&);
+        TradeResult ExecuteTrade(const std::string&, uint32_t);
 
-        // Check wehther quote has expired
+        // Check whether quote has expired
         bool isExpired(Quote&);
 
         // Compare two quotes by price for our sorting function
         bool compareByPrice(const Quote&, const Quote&);
+        
     }; // SimpleQuoteManager
 
 } // namespace QuoteManager

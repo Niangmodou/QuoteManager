@@ -6,6 +6,7 @@ Made by Modou Niang
 #include "Quoter.h"
 #include <limits>
 #include <algorithm>
+#include <time.h>
 
 using namespace std;
 
@@ -56,8 +57,8 @@ namespace QuoteManager {
         double lowestPrice = std::numeric_limits<double>::max();
         for (size_t idx = 0; idx < symbolQuotes.size(); ++idx) {
             Quote* currQuote = symbolQuotes[idx];
-
-            if(currQuote->price() < lowestPrice) {
+    
+            if(!this->isExpired(currQuote) && currQuote->price() < lowestPrice) {
                 bestQuote = *currQuote;
                 lowestPrice = currQuote->price();
             }
@@ -67,7 +68,14 @@ namespace QuoteManager {
     }
 
     bool SimpleQuoteManager::isExpired(Quote& quote) {
+        // Retrieving expiration time
+        tm* quoteExpirationTime = quote.expiration_date();
 
+        // Check whether current time is passed the expiration time
+        time_t t = std::time(0);   // get time now
+        tm* currentTime = std::localtime(&t);
+
+        return difftime(quoteExpiratonTime, currentTime); 
     }
 
     bool compareByPrice(const Quote& quote1, const Quote& quote2) {
@@ -75,13 +83,40 @@ namespace QuoteManager {
     }
 
 
-    TradeResult SimpleQuoteManager::ExecuteTrade(const string& symbol, uint32_t volume_requested) {
+    TradeResult SimpleQuoteManager::ExecuteTrade(const string& symbol,
+                                                 uint32_t volumeRequested) {
         // Retrieves all the quotes of a symbol
         vector<Quote*> symbolQuotes = this->quoteMapBySymbol[symbol];
 
         // Sort these quotes by best price to worst
         sort(symbolQuotes.begin(), symbolQuotes.end(), compareByPrice)
+        
+        // Iterate through quotes and try to fulfill order
+        for (size_t idx = 0; idx < symbolQuotes.size(); ++idx) {
+            Quote* quotePtr = symbolQuotes[idx];
 
-    
+            // Check whether available volume is greater than volume requested
+            // If so, we fulfill order 
+            // Else we decrease volume and check the next available quote
+            if (!this->isExpired(quotePtr) && 
+                quotePtr->available_volume() >= volumeRequested) {
+
+                uint16_t newVolume = quotePtr->available_volume() - volumeRequested;
+                quotePtr->setNewVolume(newVolume);
+
+                TradeResult tradeResult = TradeResult(quotePtr->id(),
+                                                      quotePtr->symbol(),
+                                                      volumeRequested,
+                                                      volumeRequested);
+
+                return tradeResult;
+            } else {
+                uint16_t newVolume = volumeRequested - quotePtr->available_volume();
+                
+                quotePtr->setNewVolume(newVolume);
+            }
+        }
+
+        return NULL;
     }
 } // namespace QuoteManager
