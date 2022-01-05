@@ -5,5 +5,5 @@ using namespace QuoteManager;
 using namespace std;
 
 int main() {
-    std::cout << "Hello First Republic" << endl;
+    std::cout << "Hello Quote Manager" << endl;
 }
