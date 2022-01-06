@@ -6,6 +6,7 @@ Made by Modou Niang
 #ifndef QUOTER_H
 #define QUOTER_H
 
+#include <optional>
 #include <chrono>
 #include <unordered_map>
 #include <string>
@@ -102,7 +103,7 @@ namespace QuoteManager {
         // volume, return null. Otherwise return a Quote object with all the fields
         // set. Don't return any quote which is past its expiration time, or has been
         // removed.
-        virtual Quote GetBestQuoteWithAvailableVolume(const std::string&) = 0;
+        virtual Quote* GetBestQuoteWithAvailableVolume(const std::string&) = 0;
 
         // Request that a trade be executed. For the purposes of this interface,
         // assume that the trade is a request to BUY, not sell. Do not trade on
@@ -121,25 +122,27 @@ namespace QuoteManager {
         // And After calling this a second time for 500 volume, the quotes are:
         //   {Price: 1.0, Volume: 1,000, AvailableVolume: 0}
         //   {Price: 2.0, Volume: 1,000, AvailableVolume: 750}
-        virtual TradeResult ExecuteTrade(const std::string&, uint32_t) = 0;
+        virtual TradeResult* ExecuteTrade(const std::string&, uint32_t) = 0;
     }; // IQuoteManager
 
     class SimpleQuoteManager : public IQuoteManager {
     private:
-        std::unordered_map<std::string, Quote*> quoteMapById;
-        std::unordered_map<std::string, std::vector<Quote*>> quoteMapBySymbol;
+        std::unordered_map<std::string, Quote*> quoteMapById_;
+        std::unordered_map<std::string, std::vector<Quote*>> quoteMapBySymbol_;
     public: 
         void AddOrUpdateQuote(Quote&);
         void RemoveQuote(const std::string&);
         void RemoveAllQuotes(const std::string&);
-        Quote GetBestQuoteWithAvailableVolume(const std::string&);
-        TradeResult ExecuteTrade(const std::string&, uint32_t);
+        Quote* GetBestQuoteWithAvailableVolume(const std::string&);
+        TradeResult* ExecuteTrade(const std::string&, uint32_t);
+
+        // Getters
+        std::unordered_map<std::string, Quote*> quoteMapById() const;
+        std::unordered_map<std::string, std::vector<Quote*>> quoteMapBySymbol() const;
 
         // Check whether quote has expired
-        bool isExpired(Quote&);
+        bool isExpired(const Quote&);
 
-        // Compare two quotes by price for our sorting function
-        bool compareByPrice(const Quote&, const Quote&);
         
     }; // SimpleQuoteManager
 
